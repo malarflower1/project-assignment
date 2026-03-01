@@ -1,26 +1,16 @@
-version: "1"
+version: "3"
 services:
-  docs:
-    container_name: docs
-    image: nginx
-    ports:
-      - "80:80"
-    volumes:
-      - "./nginx/html:/usr/share/nginx/html:ro"
-
   master:
     container_name: master
     image: arjones/pyspark:2.4.5
-    restart: always
     command: ["/opt/spark/sbin/start-master.sh"]
     environment:
-      MASTER: spark://master:7077
       SPARK_NO_DAEMONIZE: 1
     ports:
-      - 4040:4040
-      - 6066:6066
-      - 7077:7077
-      - 8080:8080
+      - "4040:4040"   # Spark UI
+      - "6066:6066"   # REST API
+      - "7077:7077"   # Spark master
+      - "8080:8080"   # Web UI
     volumes:
       - ./code:/app
       - ./dataset:/dataset
@@ -28,18 +18,14 @@ services:
   worker1:
     container_name: worker1
     image: arjones/pyspark:2.4.5
-    restart: always
     command: ["/opt/spark/sbin/start-slave.sh", "spark://master:7077"]
     environment:
-      MASTER: spark://master:7077
       SPARK_NO_DAEMONIZE: 1
+      SPARK_WORKER_WEBUI_PORT: 8081
     depends_on:
       - master
     ports:
-      - 4041:4040
-      - "6066"
-      - "7077"
-      - 8081:8080
+      - "8081:8081"
     volumes:
       - ./code:/app
       - ./dataset:/dataset
@@ -47,18 +33,14 @@ services:
   worker2:
     container_name: worker2
     image: arjones/pyspark:2.4.5
-    restart: always
     command: ["/opt/spark/sbin/start-slave.sh", "spark://master:7077"]
     environment:
-      MASTER: spark://master:7077
       SPARK_NO_DAEMONIZE: 1
+      SPARK_WORKER_WEBUI_PORT: 8082
     depends_on:
       - master
     ports:
-      - 4042:4040
-      - "6066"
-      - "7077"
-      - 8082:8080
+      - "8082:8082"
     volumes:
       - ./code:/app
       - ./dataset:/dataset
@@ -66,13 +48,12 @@ services:
   jupyter:
     container_name: jupyter
     image: arjones/pyspark:2.4.5
-    restart: always
     environment:
-      MASTER: spark://master:7077
+      SPARK_MASTER: spark://master:7077
     depends_on:
       - master
     ports:
-      - "8889:8888"
+      - "8888:8888"
     volumes:
       - ./jupyter/notebook:/notebook
       - ./dataset:/dataset
